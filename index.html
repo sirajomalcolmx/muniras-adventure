@@ -1,0 +1,349 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Munira's Adventure</title>
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --bg: #F7FFF7;
+            --text: #2F2F2F;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text);
+        }
+
+        #game-container {
+            background: white;
+            width: 90%;
+            max-width: 450px;
+            border-radius: 35px;
+            border: 8px solid var(--primary);
+            padding: 20px;
+            box-shadow: 0 15px 0 rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+        }
+
+        .game-title-header {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Progress & Score */
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .progress-outer {
+            width: 100%;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        #progress-inner {
+            width: 0%;
+            height: 100%;
+            background: var(--secondary);
+            transition: width 0.4s ease;
+        }
+
+        /* Letter Display */
+        .letter-hero {
+            font-size: 120px;
+            margin: 0;
+            color: var(--primary);
+            line-height: 1;
+            text-shadow: 4px 4px 0px rgba(0,0,0,0.05);
+        }
+
+        /* Canvas Area */
+        canvas {
+            border: 4px dashed #ddd;
+            border-radius: 20px;
+            background: #fafafa;
+            touch-action: none;
+            width: 100%;
+            max-width: 300px;
+            height: 300px;
+            margin-top: 10px;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.1s;
+        }
+
+        button:active { transform: scale(0.95); }
+        .btn-clear { background: #eee; color: #666; }
+        .btn-next { background: var(--secondary); color: white; }
+
+        footer {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #aaa;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* View Switching */
+        #find-view, #win-view { display: none; }
+
+        .emoji-grid {
+            display: flex;
+            justify-content: space-around;
+            padding: 30px 0;
+            font-size: 70px;
+        }
+
+        .emoji-btn {
+            cursor: pointer;
+            transition: transform 0.2s;
+            user-select: none;
+        }
+
+        .emoji-btn:hover { transform: scale(1.2); }
+
+        #win-view h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 10px; }
+        .trophy { font-size: 100px; margin: 20px 0; animation: pulse 1s infinite alternate; }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        .feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            font-weight: bold;
+            color: var(--secondary);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="msg-feedback" class="feedback">Great!</div>
+    
+    <!-- HEADER -->
+    <h1 class="game-title-header">Munira's Adventure</h1>
+
+    <div class="stats">
+        <span>⭐ <span id="score">0</span></span>
+        <span>Letter <span id="current-l-text">A</span>/Z</span>
+    </div>
+    <div class="progress-outer"><div id="progress-inner"></div></div>
+
+    <!-- VIEW 1: TRACING -->
+    <div id="trace-view">
+        <h1 class="letter-hero" id="display-letter">A</h1>
+        <p style="margin: 5px 0;">Trace the letter!</p>
+        <canvas id="canvas" width="300" height="300"></canvas>
+        <div class="btn-group">
+            <button class="btn-clear" onclick="clearCanvas()">Clear</button>
+            <button class="btn-next" onclick="goToFind()">I'm Done! ➔</button>
+        </div>
+    </div>
+
+    <!-- VIEW 2: FIND OBJECT -->
+    <div id="find-view">
+        <h2 id="question">Can you find the Apple?</h2>
+        <div class="emoji-grid" id="emoji-container"></div>
+        <p>Tap the correct picture!</p>
+    </div>
+
+    <!-- VIEW 3: WIN SCREEN -->
+    <div id="win-view">
+        <h1>YOU DID IT!</h1>
+        <div class="trophy">🏆</div>
+        <p>You are the champion of Munira's Adventure!</p>
+        <button class="btn-next" style="background: var(--primary)" onclick="location.reload()">Play Again</button>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>Developed by SIRAJO X</footer>
+</div>
+
+<script>
+    const alphabet = [
+        {l: 'A', word: 'Apple', icon: '🍎', distract: ['🍌', '🧸']},
+        {l: 'B', word: 'Bear', icon: '🐻', distract: ['🚗', '🍇']},
+        {l: 'C', word: 'Cat', icon: '🐱', distract: ['🍕', '🎈']},
+        {l: 'D', word: 'Dog', icon: '🐶', distract: ['🚲', '🥕']},
+        {l: 'E', word: 'Elephant', icon: '🐘', distract: ['🏠', '🍓']},
+        {l: 'F', word: 'Fish', icon: '🐟', distract: ['🌳', '🍦']},
+        {l: 'G', word: 'Giraffe', icon: '🦒', distract: ['🚁', '🍄']},
+        {l: 'H', word: 'Hippo', icon: '🦛', distract: ['👑', '🍪']},
+        {l: 'I', word: 'Ice Cream', icon: '🍦', distract: ['🧤', '🌻']},
+        {l: 'J', word: 'Jellyfish', icon: '🪼', distract: ['🚜', '🍭']},
+        {l: 'K', word: 'Kite', icon: '🪁', distract: ['🦉', '🍒']},
+        {l: 'L', word: 'Lion', icon: '🦁', distract: ['⚓', '🍐']},
+        {l: 'M', word: 'Monkey', icon: '🐵', distract: ['🛶', '🍋']},
+        {l: 'N', word: 'Nest', icon: '🪺', distract: ['🚲', '🍩']},
+        {l: 'O', word: 'Owl', icon: '🦉', distract: ['🚀', '🍉']},
+        {l: 'P', word: 'Pig', icon: '🐷', distract: ['🌈', '🌽']},
+        {l: 'Q', word: 'Queen', icon: '👸', distract: ['👟', '🍍']},
+        {l: 'R', word: 'Robot', icon: '🤖', distract: ['🦋', '🍇']},
+        {l: 'S', word: 'Sun', icon: '☀️', distract: ['🛴', '🥚']},
+        {l: 'T', word: 'Train', icon: '🚂', distract: ['🐢', '🥥']},
+        {l: 'U', word: 'Umbrella', icon: '☂️', distract: ['🧸', '🥨']},
+        {l: 'V', word: 'Violin', icon: '🎻', distract: ['🦖', '🥝']},
+        {l: 'W', word: 'Whale', icon: '🐋', distract: ['🎸', '🧀']},
+        {l: 'X', word: 'Xylophone', icon: '🎹', distract: ['🦀', '🥬']},
+        {l: 'Y', word: 'Yo-yo', icon: '🪀', distract: ['🦆', '🥖']},
+        {l: 'Z', word: 'Zebra', icon: '🦓', distract: ['🐝', '🥕']}
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+
+    // Drawing Setup
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { 
+            x: (clientX - rect.left) * (canvas.width / rect.width), 
+            y: (clientY - rect.top) * (canvas.height / rect.height) 
+        };
+    }
+
+    function startDraw(e) { 
+        isDrawing = true; 
+        ctx.beginPath(); 
+        const {x, y} = getPos(e);
+        ctx.moveTo(x, y);
+    }
+    
+    function stopDraw() { isDrawing = false; }
+    
+    function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const {x, y} = getPos(e);
+        ctx.lineWidth = 18;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#4ECDC4';
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchmove', draw);
+    window.addEventListener('touchend', stopDraw);
+
+    function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+    function showFeedback(text) {
+        const fb = document.getElementById('msg-feedback');
+        fb.innerText = text;
+        fb.style.opacity = '1';
+        setTimeout(() => fb.style.opacity = '0', 800);
+    }
+
+    function goToFind() {
+        showFeedback("Nice Tracing!");
+        document.getElementById('trace-view').style.display = 'none';
+        document.getElementById('find-view').style.display = 'block';
+        
+        const item = alphabet[currentIdx];
+        document.getElementById('question').innerText = `Can you find the ${item.word}?`;
+        
+        const container = document.getElementById('emoji-container');
+        container.innerHTML = '';
+        
+        const choices = [item.icon, ...item.distract].sort(() => Math.random() - 0.5);
+        choices.forEach(emoji => {
+            const div = document.createElement('div');
+            div.className = 'emoji-btn';
+            div.innerText = emoji;
+            div.onclick = () => {
+                if (emoji === item.icon) {
+                    score += 10;
+                    document.getElementById('score').innerText = score;
+                    showFeedback("Super!");
+                    nextLevel();
+                } else {
+                    div.style.transform = 'translateX(10px)';
+                    setTimeout(() => div.style.transform = 'translateX(0)', 100);
+                    div.style.filter = 'grayscale(1)';
+                    setTimeout(() => div.style.filter = 'none', 500);
+                }
+            };
+            container.appendChild(div);
+        });
+    }
+
+    function nextLevel() {
+        currentIdx++;
+        const progress = (currentIdx / alphabet.length) * 100;
+        document.getElementById('progress-inner').style.width = progress + '%';
+
+        setTimeout(() => {
+            if (currentIdx >= alphabet.length) {
+                document.getElementById('find-view').style.display = 'none';
+                document.getElementById('win-view').style.display = 'block';
+            } else {
+                const item = alphabet[currentIdx];
+                document.getElementById('display-letter').innerText = item.l;
+                document.getElementById('current-l-text').innerText = item.l;
+                document.getElementById('find-view').style.display = 'none';
+                document.getElementById('trace-view').style.display = 'block';
+                clearCanvas();
+            }
+        }, 500);
+    }
+</script>
+
+</body>
+</html>
+
